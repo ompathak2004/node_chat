@@ -6,7 +6,7 @@ Node_Chat is a Chat Application build using Node, Express, Socket.io and Mustach
 ```bash
 npm install 
 
-npm start
+node src/index.js
 
 ```
 [Live](https://node-chat-nuom.onrender.com)
