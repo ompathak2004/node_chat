@@ -1,3 +1,4 @@
+/* General Styles */
 
 * {
     margin: 0;
@@ -55,6 +56,7 @@ button:disabled {
     background: #7c5cbf94;
 }
 
+/* Join Page Styles */
 
 .centered-form {
     background: #333744;
@@ -81,6 +83,8 @@ button:disabled {
     width: 100%;
 }
 
+/* Chat Page Layout */
+
 .chat {
     display: flex;
 }
@@ -93,6 +97,7 @@ button:disabled {
     overflow-y: scroll
 }
 
+/* Chat styles */
 
 .chat__main {
     flex-grow: 1;
@@ -107,6 +112,7 @@ button:disabled {
     overflow-y: scroll;
 }
 
+/* Message Styles */
 
 .message {
     margin-bottom: 16px;   
@@ -127,6 +133,7 @@ button:disabled {
     color: #0070CC;
 }
 
+/* Message Composition Styles */
 
 .compose {
     display: flex;
@@ -153,6 +160,7 @@ button:disabled {
     font-size: 14px;
 }
 
+/* Chat Sidebar Styles */
 
 .room-title {
     font-weight: 400;

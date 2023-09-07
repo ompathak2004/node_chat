@@ -1,80 +1,88 @@
 const socket = io()
 
-
 const $messageForm = document.querySelector('#message-form')
 const $messageFormInput = $messageForm.querySelector('input')
 const $messageFormButton = $messageForm.querySelector('button')
 const $sendLocationButton = document.querySelector('#send-location')
 const $messages = document.querySelector('#messages')
-const $files = document.querySelector('#file-template')
+const fileInput = document.getElementById('fileInput');
+const sendButton = document.getElementById('sendButton');
+const imageContainer = document.getElementById('imageContainer');
 
 const messageTemplate = document.querySelector('#message-template').innerHTML
 const locationMessageTemplate = document.querySelector('#location-message-template').innerHTML
 const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
+
 const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
 
-document.getElementById('sendButton').addEventListener('click', () => {
-    const fileInput = document.getElementById('fileInput');
+const autoscroll = () => {
+    const $newMessage = $messages.lastElementChild
+
+    const newMessageStyles = getComputedStyle($newMessage)
+    const newMessageMargin = parseInt(newMessageStyles.marginBottom)
+    const newMessageHeight = $newMessage.offsetHeight + newMessageMargin
+
+    const visibleHeight = $messages.offsetHeight
+
+    const containerHeight = $messages.scrollHeight
+
+    const scrollOffset = $messages.scrollTop + visibleHeight
+
+    if (containerHeight - newMessageHeight <= scrollOffset) {
+        $messages.scrollTop = $messages.scrollHeight
+    }
+}
+
+sendButton.addEventListener('click', () => {
     const file = fileInput.files[0];
 
     if (file) {
         const reader = new FileReader();
-        reader.onload = () => {
-            const data = reader.result.split(',')[1];
-            socket.emit('sendFile', { filename: file.name, data });
+
+        reader.onload = (e) => {
+            const imageData = e.target.result;
+            socket.emit('image', imageData);
         };
+
         reader.readAsDataURL(file);
     }
 });
 
-socket.on('receiveFile', (data) => {
-    const fileBlob = b64toBlob(data.data, data.type);
-    const url = URL.createObjectURL(fileBlob);
+const imageMessageTemplate = `
+    <div class="message">
+        <p>
+            <span class="message__name">{{username}}</span>
+            <span class="message__meta">{{createdAt}}</span>
+        </p>
+        <img src="{{imageUrl}}" alt="Image">
+    </div>
+`;
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = data.filename;
-    link.innerText = `Download ${data.filename}`;
-    
-    document.body.appendChild(link);
 
+socket.on('image', (message) => {
+    console.log(message);
+    const html = Mustache.render(imageMessageTemplate, {
+        username: message.username,
+        imageUrl: message,
+        createdAt: moment(message.createdAt).format('h:mm a')
+    });
+
+    $messages.insertAdjacentHTML('beforeend', html);
+
+    autoscroll();
+});
+
+
+socket.on('message', (message) => {
+    console.log(message)
     const html = Mustache.render(messageTemplate, {
         username: message.username,
         message: message.text,
         createdAt: moment(message.createdAt).format('h:mm a')
     })
     $messages.insertAdjacentHTML('beforeend', html)
-});
-
-function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
-    const byteCharacters = atob(b64Data);
-    const byteArrays = [];
-
-    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-        const slice = byteCharacters.slice(offset, offset + sliceSize);
-
-        const byteNumbers = new Array(slice.length);
-        for (let i = 0; i < slice.length; i++) {
-            byteNumbers[i] = slice.charCodeAt(i);
-        }
-
-        const byteArray = new Uint8Array(byteNumbers);
-        byteArrays.push(byteArray);
-    }
-
-    const blob = new Blob(byteArrays, { type: contentType });
-    return blob;
-}
-
-socket.on('message', (message) => {
-    console.log(message)
-    const html = Mustache.render(filesx, {
-        username: message.username,
-        message: message.text,
-        createdAt: moment(message.createdAt).format('h:mm a')
-    })
-    $messages.insertAdjacentHTML('beforeend', html)
+    autoscroll()
 })
 
 socket.on('locationMessage', (message) => {
@@ -85,6 +93,7 @@ socket.on('locationMessage', (message) => {
         createdAt: moment(message.createdAt).format('h:mm a')
     })
     $messages.insertAdjacentHTML('beforeend', html)
+    autoscroll()
 })
 
 socket.on('roomData', ({ room, users }) => {
@@ -128,7 +137,7 @@ $sendLocationButton.addEventListener('click', () => {
             longitude: position.coords.longitude
         }, () => {
             $sendLocationButton.removeAttribute('disabled')
-            console.log('Location shared!')  
+            console.log('Location shared!')
         })
     })
 })
